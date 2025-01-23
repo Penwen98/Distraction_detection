@@ -1,4 +1,5 @@
 # Libraries
+import sys
 import numpy as np
 from tqdm import tqdm
 from time import time
@@ -22,8 +23,8 @@ def dataTransformer():
     ])
     
     # Create Dataset
-    TRAIN_ROOT = "C:/Users/lucrezia.rettori/Desktop/Distraction_detection/Revitsone-5classes/train"
-    TEST_ROOT = "C:/Users/lucrezia.rettori/Desktop/Distraction_detection/Revitsone-5classes/test"
+    TRAIN_ROOT = sys.path[0] + "/Revitsone-5classes/train"
+    TEST_ROOT = sys.path[0] + "/Revitsone-5classes/test"
     
     train_ds = ImageFolder(TRAIN_ROOT, transform = tfm)
     test_ds = ImageFolder(TEST_ROOT, transform = tfm)

@@ -1,5 +1,6 @@
 import cv2
 import sys
+import numpy as np
 
 # Silence tensorflow
 import os
@@ -36,7 +37,7 @@ def getDistractionType():
         cv2.rectangle(frame, (x, y-50), (x+w, y+h+10), (255, 0, 0), 2)
         roi_gray = gray[y:y + h, x:x + w]
         cropped_img = np.expand_dims(np.expand_dims(cv2.resize(roi_gray, (48, 48)), -1), 0)
-        #prediction = model.predict(cropped_img)
+        prediction = model.predict(cropped_img)
 
     data = {}
     if type(prediction) is np.ndarray:
