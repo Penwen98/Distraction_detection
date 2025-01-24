@@ -22,7 +22,7 @@ class NoFaceDetectedException(Exception):
     def msg():
         return "No face detected on the screen"
 
-def getDistractionType():
+def getDistractionType(model):
     # Find haar cascade to draw bounding box around face
     ret, frame = cap.read()
     if not ret:
@@ -42,7 +42,7 @@ def getDistractionType():
     data = {}
     if type(prediction) is np.ndarray:
         for distraction_type in type_of_distraction_dict:
-            data[type_of_distraction_dict[distraction_type]] = round(prediction[0][distraction_type].item(), 8)
+            data[type_of_distraction_dict[distraction_type]] = round(prediction[0][distraction_type].item(), 5)
     else:
         raise NoFaceDetectedException
 

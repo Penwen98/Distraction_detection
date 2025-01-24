@@ -42,7 +42,7 @@ def getDistractionType():
     data = {}
     if type(prediction) is np.ndarray:
         for distraction_type in type_of_distraction_dict:
-            data[type_of_distraction_dict[distraction_type]] = round(prediction[0][distraction_type].item(), 8)
+            data[type_of_distraction_dict[distraction_type]] = round(prediction[0][distraction_type].item(), 5)
     else:
         raise NoFaceDetectedException
 

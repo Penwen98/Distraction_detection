@@ -4,6 +4,7 @@ from tqdm import tqdm
 from time import time
 from PIL import Image
 import datasetMng
+import sys
 
 import torch
 from torch.optim import Adam
@@ -12,6 +13,8 @@ from torch.utils.data import DataLoader
 
 from torchvision.transforms import transforms
 from torchvision.datasets import ImageFolder
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Build Model
 class DistractionCNN(Module):
@@ -30,63 +33,59 @@ class DistractionCNN(Module):
         output = self.relu(output)
         output = self.bn(output)
         output = self.drop(output)
-        print(output.shape)
+        #print(output.shape)
         output = output.view(-1, 8*126*126)
         output = self.fc(output)
         return output
 
-def buildModel():
-    # Device
-    global device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    global model, optimiser, loss_fn
-    
-    # Define Model and Migrate to GPU
-    model = DistractionCNN().to(device)
-    # Optimiser
-    optimiser = Adam(model.parameters(), lr=1e-4, weight_decay=0.0001)
+# Define Model and Migrate to GPU
+model = DistractionCNN().to(device)
+# Optimiser
+optimiser = Adam(model.parameters(), lr=1e-4, weight_decay=0.0001)
 
-    # Loss Function
-    loss_fn = CrossEntropyLoss()
+# Loss Function
+loss_fn = CrossEntropyLoss()
 
-def trainAndEvaluate():
-    for epoch in range(25):
-        start = time()
-        train_acc = 0
-        test_acc = 0
-    
-        # Train
-        model.train()
-        with tqdm(train_loader, unit="batch") as tepoch:
-            for xtrain, ytrain in tepoch:
-                optimiser.zero_grad()
-                xtrain = xtrain.to(device)
-                train_prob = model(xtrain)
-                train_prob = train_prob.cpu()
-                train_loss = loss_fn(train_prob, ytrain)
-                train_loss.backward()
-                optimiser.step()
-                # END TRAIN
-                train_pred = torch.max(train_prob, 1).indices
-                train_acc += int(torch.sum(train_pred == ytrain))
-                
-            train_epoch_accuracy = train_acc / len_train
-    
-        # Evaluate
-        model.eval()
-        with torch.no_grad():
-            for xtest, ytest in test_loader:
-                xtest = xtest.to(device)
-                test_prob = model(xtest)
-                test_prob = test_prob.cpu()
-                test_loss = loss_fn(test_prob, ytest)
-                test_pred = torch.max(test_prob, 1).indices
-                test_acc += int(torch.sum(test_pred == ytest))
+for epoch in range(25):
+    start = time()
+    train_acc = 0
+    test_acc = 0
+
+    # Train
+    model.train()
+    with tqdm(datasetMng.train_loader, unit="batch") as tepoch:
+        for xtrain, ytrain in tepoch:
+            optimiser.zero_grad()
+            xtrain = xtrain.to(device)
+            train_prob = model(xtrain)
+            train_prob = train_prob.cpu()
+            train_loss = loss_fn(train_prob, ytrain)
+            train_loss.backward()
+            optimiser.step()
+            # END TRAIN
+            train_pred = torch.max(train_prob, 1).indices
+            train_acc += int(torch.sum(train_pred == ytrain))
             
-            test_epoch_accuracy = test_acc / len_test
+        train_epoch_accuracy = train_acc / datasetMng.len_train
+
+    # Evaluate
+    model.eval()
+    with torch.no_grad():
+        for xtest, ytest in datasetMng.test_loader:
+            xtest = xtest.to(device)
+            test_prob = model(xtest)
+            test_prob = test_prob.cpu()
+            test_loss = loss_fn(test_prob, ytest)
+            test_pred = torch.max(test_prob, 1).indices
+            test_acc += int(torch.sum(test_pred == ytest))
         
-        end = time()
-        
-        diff = end - start
-        
-        print(f"Epoch: {epoch+1}, Time: {diff}\nTr_loss: {train_loss}, Test_loss: {test_loss}\n,Tr_acc:{train_epoch_accuracy}, Test_acc: {test_epoch_accuracy}")
+        test_epoch_accuracy = test_acc / datasetMng.len_test
+    
+    end = time()
+    
+    diff = end - start
+    
+    print(f"Epoch: {epoch+1}, Time: {diff}\nTr_loss: {train_loss}, Test_loss: {test_loss}\n,Tr_acc:{train_epoch_accuracy}, Test_acc: {test_epoch_accuracy}")
+
+torch.save(model.state_dict(), sys.path[0])
 
